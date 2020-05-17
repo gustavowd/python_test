@@ -2,11 +2,19 @@ import sys
 from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtWidgets import QApplication, QDialog, QMainWindow
 from PyQt5.uic import loadUi
+from PyQt5 import QtWidgets, uic
+from pyqtgraph import PlotWidget
+import pyqtgraph as pg
+
+from PySide2 import QtCore
+from PyQt5.QtCore import QDate, QTime, QDateTime, Qt
 
 from ctypes import cdll, c_long, c_int, c_char_p, create_string_buffer
 
 import serial
 import numpy as np
+
+import threading
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -17,6 +25,18 @@ class MainWindow(QMainWindow):
         self.pushButton2.clicked.connect(self.on_pushButton2_clicked)
         self.pushButton3.clicked.connect(self.on_pushButton3_clicked)
         self.pushButton4.clicked.connect(self.on_pushButton4_clicked)
+        self.timer1 = QtCore.QTimer()
+        self.timer1.timeout.connect(self.showTime)
+        self.timer1.start(100)
+        self.plot([1,2,3,4,5,6,7,8,9,10], [30,32,34,32,33,31,29,32,35,45])
+
+    def showTime(self):
+        time = QTime.currentTime()
+        self.upTime.setText(time.toString(Qt.DefaultLocaleLongDate))
+        #print('Teste')
+
+    def plot(self, hour, temperature):
+        self.graphWidget.plot(hour, temperature)
     
     def on_pushButton_clicked(self):
         self.label.setText('Ligado!')
@@ -242,6 +262,12 @@ def write_holding_reg(slave_address, init_address, num_reg_write, regs):
         return 0
 
     ser.close()             # close port
+
+def printit():
+    threading.Timer(5.0, printit).start()
+    print ("Hello, World!")
+
+printit()
 
 app=QApplication(sys.argv)
 widget=MainWindow()
