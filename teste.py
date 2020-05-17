@@ -47,8 +47,6 @@ class MainWindow(QMainWindow):
     def showTime(self):
         time = QTime.currentTime()
         self.upTime.setText(time.toString(Qt.DefaultLocaleLongDate))
-        self.counter += 1
-        self.idx += 0.1
 
         if (self.counter > 200):
             self.overflow = True
@@ -66,10 +64,16 @@ class MainWindow(QMainWindow):
             value = float(regs[0]) / 10.0
             #self.graph_data_y.append(value)
             self.graph_data_y[self.counter] = value
-            #self.graph_data_y[self.counter + 1] = 0#np.nan
-            #self.graph_data_y[self.counter + 2] = 0#np.nan
+            for i in range(self.counter + 1, self.counter + 10):
+                if (i > 200):
+                    break
+                self.graph_data_y[i] = 0#np.nan
+
+            #con = np.isfinite(self.graph_data_y)
+            #print(con)
             #self.graph_data_y.append( self.counter)  # Add a new random value.
-            self.data_line.setData(self.graph_data_x, self.graph_data_y)  # Update the data.
+            #self.data_line.setData(self.graph_data_x, self.graph_data_y, connect=np.logical_and(con, np.roll(con, -1)))  # Update the data.
+            self.data_line.setData(self.graph_data_x, self.graph_data_y, connect="finite")  # Update the data.
         else:
             self.graph_data_x.insert(self.counter, self.idx)
             #self.graph_data_y.insert(self.counter, self.counter ** 2)
@@ -81,8 +85,10 @@ class MainWindow(QMainWindow):
             if self.data_line == 0:
                 self.data_line = self.graphWidget.plot(self.graph_data_x, self.graph_data_y, connect="finite", pen=self.pen)
             else:
-                self.data_line.setData(self.graph_data_x, self.graph_data_y)  # Update the data.
+                self.data_line.setData(self.graph_data_x, self.graph_data_y, connect='finite')  # Update the data.
             
+        self.counter += 1
+        self.idx += 0.1
     
     def on_pushButton_clicked(self):
         self.label.setText('Ligado!')
