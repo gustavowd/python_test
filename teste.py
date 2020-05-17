@@ -66,6 +66,8 @@ class MainWindow(QMainWindow):
             value = float(regs[0]) / 10.0
             #self.graph_data_y.append(value)
             self.graph_data_y[self.counter] = value
+            #self.graph_data_y[self.counter + 1] = 0#np.nan
+            #self.graph_data_y[self.counter + 2] = 0#np.nan
             #self.graph_data_y.append( self.counter)  # Add a new random value.
             self.data_line.setData(self.graph_data_x, self.graph_data_y)  # Update the data.
         else:
@@ -77,7 +79,7 @@ class MainWindow(QMainWindow):
             self.graph_data_y.insert(self.counter, value)
 
             if self.data_line == 0:
-                self.data_line = self.graphWidget.plot(self.graph_data_x, self.graph_data_y, pen=self.pen)
+                self.data_line = self.graphWidget.plot(self.graph_data_x, self.graph_data_y, connect="finite", pen=self.pen)
             else:
                 self.data_line.setData(self.graph_data_x, self.graph_data_y)  # Update the data.
             
@@ -102,11 +104,6 @@ class MainWindow(QMainWindow):
         b_port = port.encode('utf-8')
         modbus_open(b_port)
         modbus_onoff(1)
-        #ser = serial.Serial(self.lineEdit4.text(), 115200, timeout=20)  # open serial port
-        #ser.write(b'hello')     # write a string
-        #values = bytearray([4, 9, 62, 144, 56, 30, 147, 3, 210, 89, 111, 78, 184, 151, 17, 129])
-        #ser.write(values)
-        #ser.close()             # close port
 
     def on_pushButton4_clicked(self):
         if self.pushButton4.text() == 'ON':
