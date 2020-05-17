@@ -16,6 +16,7 @@ class MainWindow(QMainWindow):
         self.pushButton.clicked.connect(self.on_pushButton_clicked)
         self.pushButton2.clicked.connect(self.on_pushButton2_clicked)
         self.pushButton3.clicked.connect(self.on_pushButton3_clicked)
+        self.pushButton4.clicked.connect(self.on_pushButton4_clicked)
     
     def on_pushButton_clicked(self):
         self.label.setText('Ligado!')
@@ -42,6 +43,20 @@ class MainWindow(QMainWindow):
         #values = bytearray([4, 9, 62, 144, 56, 30, 147, 3, 210, 89, 111, 78, 184, 151, 17, 129])
         #ser.write(values)
         #ser.close()             # close port
+
+    def on_pushButton4_clicked(self):
+        if self.pushButton4.text() == 'ON':
+            print('Ligou!')
+            regs = [1, 10]
+            write_holding_reg(10, 40009, 2, regs)
+            self.pushButton4.setText('OFF')
+            status = True
+        else:
+            print('Desligou!')
+            regs = [0, 10]
+            write_holding_reg(10, 40009, 2, regs)
+            self.pushButton4.setText('ON')
+            status = False
 
 
 fruits = ['apple', 'banana', 'cherry']
@@ -227,9 +242,6 @@ def write_holding_reg(slave_address, init_address, num_reg_write, regs):
         return 0
 
     ser.close()             # close port
-
-regs = [1, 10]
-write_holding_reg(10, 40009, 2, regs)
 
 app=QApplication(sys.argv)
 widget=MainWindow()

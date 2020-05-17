@@ -193,6 +193,24 @@ border-radius:10px;</string>
      <string>/dev/ttyACM0</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="pushButton4">
+    <property name="geometry">
+     <rect>
+      <x>730</x>
+      <y>10</y>
+      <width>231</width>
+      <height>61</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color:black;
+color: white;
+border-radius:10px;</string>
+    </property>
+    <property name="text">
+     <string>ON</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
