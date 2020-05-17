@@ -13,10 +13,19 @@ from ctypes import cdll, c_long, c_int, c_char_p, create_string_buffer
 
 import serial
 import numpy as np
+from random import randint
 
 import threading
 
 class MainWindow(QMainWindow):
+    graph_data_x = []
+    graph_data_y = []
+    counter = 0
+    idx = 0.0
+    overflow = False
+    pen = pg.mkPen(color=(255, 0, 0))
+    data_line = 0
+
     def __init__(self):
         super(MainWindow, self).__init__()
         loadUi('teste.ui', self)
@@ -27,16 +36,51 @@ class MainWindow(QMainWindow):
         self.pushButton4.clicked.connect(self.on_pushButton4_clicked)
         self.timer1 = QtCore.QTimer()
         self.timer1.timeout.connect(self.showTime)
-        self.timer1.start(100)
-        self.plot([1,2,3,4,5,6,7,8,9,10], [30,32,34,32,33,31,29,32,35,45])
+        #self.timer1.start(100)
+        self.counter = 0
+        self.graphWidget.setLabel('left', "<span style=\"color:red;font-size:30px\">Paw (cmH2O)</span>")
+        self.graphWidget.setLabel('bottom', "<span style=\"color:red;font-size:30px\">Time (s)</span>")
+        self.graphWidget.setBackground('w')
+        self.graphWidget.setYRange(0.0, 45.0, padding=0)
+        self.graphWidget.setXRange(0.0, 20.0, padding=0)
 
     def showTime(self):
         time = QTime.currentTime()
         self.upTime.setText(time.toString(Qt.DefaultLocaleLongDate))
-        #print('Teste')
+        self.counter += 1
+        self.idx += 0.1
 
-    def plot(self, hour, temperature):
-        self.graphWidget.plot(hour, temperature)
+        if (self.counter > 200):
+            self.overflow = True
+            self.counter = 0
+            self.idx = 0.0
+
+        if self.overflow == True:
+            #self.graph_data_y[self.counter] = self.counter#np.nan
+            #self.graph_data_x = self.graph_data_x[1:]  # Remove the first y element.
+            #self.graph_data_x.append(self.graph_data_x[-1] + 0.1)  # Add a new value 1 higher than the last.
+
+            #self.graph_data_y = self.graph_data_y[1:]  # Remove the first 
+            regs = [0]
+            read_input_reg(10, 50000, 1, regs)
+            value = float(regs[0]) / 10.0
+            #self.graph_data_y.append(value)
+            self.graph_data_y[self.counter] = value
+            #self.graph_data_y.append( self.counter)  # Add a new random value.
+            self.data_line.setData(self.graph_data_x, self.graph_data_y)  # Update the data.
+        else:
+            self.graph_data_x.insert(self.counter, self.idx)
+            #self.graph_data_y.insert(self.counter, self.counter ** 2)
+            regs = [0]
+            read_input_reg(10, 50000, 1, regs)
+            value = float(regs[0]) / 10.0
+            self.graph_data_y.insert(self.counter, value)
+
+            if self.data_line == 0:
+                self.data_line = self.graphWidget.plot(self.graph_data_x, self.graph_data_y, pen=self.pen)
+            else:
+                self.data_line.setData(self.graph_data_x, self.graph_data_y)  # Update the data.
+            
     
     def on_pushButton_clicked(self):
         self.label.setText('Ligado!')
@@ -68,15 +112,24 @@ class MainWindow(QMainWindow):
         if self.pushButton4.text() == 'ON':
             print('Ligou!')
             regs = [1, 10]
-            write_holding_reg(10, 40009, 2, regs)
-            self.pushButton4.setText('OFF')
-            status = True
+            status = write_holding_reg(10, 40009, 2, regs)
+            if status == 0:
+                self.timer1.start(100)
+                self.pushButton4.setText('OFF')
         else:
             print('Desligou!')
             regs = [0, 10]
-            write_holding_reg(10, 40009, 2, regs)
-            self.pushButton4.setText('ON')
-            status = False
+            status = write_holding_reg(10, 40009, 2, regs)
+            if status == 0:
+                self.graphWidget.clear()
+                self.counter = 0
+                self.idx = 0.0
+                self.overflow = False
+                self.timer1.stop()
+                self.graph_data_x.clear()
+                self.graph_data_y.clear()
+                self.data_line = 0
+                self.pushButton4.setText('ON')
 
 
 fruits = ['apple', 'banana', 'cherry']
@@ -155,6 +208,8 @@ type(0x10)
 type(0b10)
 type(.4e7)
 
+ser = serial.Serial()
+
 aucCRCHi = [0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41,
     0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40,
     0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41,
@@ -220,8 +275,6 @@ def write_holding_reg(slave_address, init_address, num_reg_write, regs):
     funcao = 16
     mensagem = []
     tamanho_pergunta = 7+(2*num_reg_write)
-    #resposta = [0,0,0,0,0,0,0,0]
-    #crc_resp = 0
     crc = 0
     init_address -= 1
     mensagem.insert(0,slave_address)
@@ -240,7 +293,11 @@ def write_holding_reg(slave_address, init_address, num_reg_write, regs):
     mensagem.insert(tamanho_pergunta, crc & 0xFF)
     mensagem.insert(tamanho_pergunta+1, crc >> 8)
     print(mensagem)
-    ser = serial.Serial('/dev/ttyACM0', 115200, timeout=20)  # open serial port
+    if 'ser' in locals():
+        print('Porta serial aberta')
+    else:
+        ser = serial.Serial('/dev/ttyACM0', 115200, timeout=20)  # open serial port
+    
     #array_message = bytearray(mensagem)
     #print(array_message)
     ser.write(mensagem)     # write a string
@@ -261,7 +318,52 @@ def write_holding_reg(slave_address, init_address, num_reg_write, regs):
         print('crc correto!')
         return 0
 
-    ser.close()             # close port
+    #ser.close()             # close port
+
+def read_input_reg(slave_address, init_address, num_reg_read, regs):
+    funcao = 4
+    mensagem = []
+    tamanho_resposta = 5+(2*num_reg_read)
+    crc = 0
+    init_address -= 1
+    mensagem.insert(0,slave_address)
+    mensagem.insert(1,funcao)
+    mensagem.insert(2,init_address >> 8)
+    mensagem.insert(3,init_address & 0xFF)
+    mensagem.insert(4,num_reg_read >> 8)
+    mensagem.insert(5,num_reg_read & 0xFF)
+
+    crc=usMBCRC16(mensagem,6)
+    mensagem.insert(6, crc & 0xFF)
+    mensagem.insert(7, crc >> 8)
+    #print(mensagem)
+
+    if 'ser' in locals():
+        print('Porta serial aberta')
+    else:
+        ser = serial.Serial('/dev/ttyACM0', 115200, timeout=20)  # open serial port
+    
+    ser.write(mensagem)     # write a string
+    #print(tamanho_resposta)
+    resposta = ser.read(tamanho_resposta)
+    #print(resposta)
+    #print(len(resposta))
+    if resposta[1] != funcao:
+        return -1
+    
+    #Teste de CRC
+    crc=usMBCRC16(resposta, tamanho_resposta-2)
+    crc_resp=(resposta[tamanho_resposta-1]<<8) | (resposta[tamanho_resposta-2])
+    if crc != crc_resp:
+        print('Erro crc!')
+        return -1
+    else:
+        for i in range ((tamanho_resposta - 5)>>1):
+            regs[i] =  (resposta[3+(i*2)] << 8) | (resposta[4+(i*2)] & 0xFF)
+        #print('crc correto!')
+        return 0
+
+    #ser.close()             # close port
 
 def printit():
     threading.Timer(5.0, printit).start()
