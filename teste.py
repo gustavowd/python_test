@@ -91,6 +91,22 @@ class MainWindow(QMainWindow):
     
     def on_pushButton_clicked(self):
         self.label.setText('Ligado!')
+        #file = open('abc.txt', 'a+') #abre arquivo com append
+        file = open('abc.txt', 'w+')
+        file.write('Teste de escrita\n')
+        #file.seek(0, 0)    #volta ao inicio
+        #file.readline()    #le a linha
+        file.close()
+
+        with open('abcd.txt', 'w+') as file:
+            file.write('linha 1\n')
+            file.write('linha 2\n')
+
+        try:
+            file = open('leitura.txt', 'r')
+            self.lineEdit.setText(file.readline())
+        finally:
+            file.close()
 
     def on_pushButton2_clicked(self):
         testlib = cdll.LoadLibrary("./libtest.so")
