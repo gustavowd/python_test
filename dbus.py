@@ -7,8 +7,8 @@ bus = SessionBus()
 
 # Create an object that will proxy for a particular remote object.
 remote_object = bus.get(
-    "br.copel.inversandro.DBusTutorial2", # Bus name
-    "/br/copel/inversandro/DBusTutorial2" # Object path
+    "br.copel.inversandro.DBusTutorial", # Bus name
+    "/br/copel/inversandro/DBusTutorial" # Object path
 )
 
 # Introspection returns an XML document containing information
@@ -25,7 +25,7 @@ print(remote_object.Introspect())
 
 
 loop = GLib.MainLoop()
-dbus_filter = "/br/copel/inversandro/DBusTutorial2"
+dbus_filter = "/br/copel/inversandro/DBusTutorial"
 
 
 def cb_server_signal_emission(*args):
